@@ -77,7 +77,7 @@ yamnet_audioset_analysis_docker/
 
 ```bash
 git clone https://github.com/cheikh646/yamnet__docker_influxdB.git
-cd yamnet_audioset_analysis_docker
+cd yamnet_docker_influxdB
 ```
 
 ### 2. Construire l'image Docker
