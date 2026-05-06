@@ -38,7 +38,7 @@ yamnet_audioset_analysis_docker/
 ├── Dockerfile.save                 → Sauvegarde de l'ancienne version
 │
 ├── yamnet_processing.py            → Script principal d'analyse IA
-├── 📦requirements_yamnet.txt         → Dépendances Python
+├── requirements_yamnet.txt         → Dépendances Python
 │
 ├──  build.sh                        → Construit l'image Docker
 ├── ▶️  run.sh                          → Lance l'analyse sur un fichier
