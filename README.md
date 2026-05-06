@@ -1,4 +1,4 @@
-# 🎙️ YAMNet AudioSet Docker Analysis
+# YAMNet AudioSet Docker Analysis
 
 <div align="center">
 
@@ -55,28 +55,28 @@ yamnet_audioset_analysis_docker/
 | Catégorie | Seuil de confiance |
 |---|:---:|
 | 🔇 Silence | 0.50 |
-| 🗣️ Speech | 0.50 |
-| 🎵 Music | 0.10 |
-| 🔫 Gunshot, gunfire | 0.40 |
-| 💥 Explosion | 0.40 |
+|  Speech | 0.50 |
+|  Music | 0.10 |
+| Gunshot, gunfire | 0.40 |
+| Explosion | 0.40 |
 | 🔊 Other | 0.30 |
 
 > Un événement est détecté seulement si le score de YAMNet dépasse le seuil correspondant.
 
 ---
 
-## 🚀 Installation et utilisation
+## Installation et utilisation
 
 ### Prérequis
 
-- Raspberry Pi 4 (ARM64) avec **Raspberry Pi OS 64-bit**
+- Raspberry Pi 5 (ARM64) avec **Raspberry Pi OS 64-bit**
 - **Docker** installé sur le Pi
 - **InfluxDB 2.x** accessible sur le réseau (container ou serveur)
 
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/VOTRE_USERNAME/yamnet_audioset_analysis_docker.git
+git clone https://github.com/cheikh646/yamnet__docker_influxdB.git
 cd yamnet_audioset_analysis_docker
 ```
 
@@ -135,7 +135,7 @@ Chaque événement envoyé contient :
 
 
 
-## 📦 Formats de fichiers supportés
+##  Formats de fichiers supportés
 
 | Type | Extensions |
 |---|---|
@@ -144,7 +144,7 @@ Chaque événement envoyé contient :
 
 ---
 
-## 🎓 Modèle YAMNet
+##  Modèle YAMNet
 
 - **Développeur** : Google / TensorFlow
 - **Dataset d'entraînement** : [AudioSet](https://research.google.com/audioset/) (2 millions de clips YouTube)
@@ -154,7 +154,7 @@ Chaque événement envoyé contient :
 
 ---
 
-## 👨‍💻 Auteur
+##Auteur
 
 <div align="center">
 
@@ -163,7 +163,6 @@ Chaque événement envoyé contient :
 | **Nom** | Cheikh Brahim Ahmed |
 | **Titre** | Élève Ingénieur en Systèmes Embarqués |
 | **École** | École Nationale d'Ingénieurs de Tunis (ENIT) |
-| **Projet** | Projet de Fin d'Études (PFE) |
 
 </div>
 
