@@ -25,7 +25,7 @@ Ce projet permet d'analyser des fichiers **audio** (`.wav`) ou **vidéo** (`.mp4
 -  Silence (`Silence`)
 -  Autres sons (`Other`)
 
-Le modèle utilisé est **YAMNet** (Yet Another Mobile Network), développé par Google et entraîné sur **521 catégories de sons** du dataset AudioSet. Les résultats sont exportés en **CSV** et envoyés vers **InfluxDB** pour une visualisation en temps réel (ex: Grafana).
+Le modèle utilisé est **YAMNet** (Yet Another Mobile Network), développé par Google et entraîné sur **521 catégories de sons** du dataset AudioSet. Les résultats sont exportés en **CSV** et envoyés vers **InfluxDB** pour une visualisation en temps réel .
 
 ---
 
