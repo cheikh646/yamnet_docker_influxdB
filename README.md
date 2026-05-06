@@ -1,96 +1,237 @@
-# Docker Image for YAMNet audio analysis
+# 🎙️ YAMNet AudioSet Docker Analysis
 
-This repository contains the sources for creating a ready-to-use Docker image for audio event analysis using the Google YAMNet / AudioSet model.
+<div align="center">
 
-The image can be used to automatically analyze a video or audio file according to the 521 audio event classes from the [AudioSet ontology](https://research.google.com/audioset/ontology/index.html). If the input file is video, the audio track is extracted first.
+![Python](https://img.shields.io/badge/Python-3.9-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.13.0-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ARM64-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-4-A22846?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![InfluxDB](https://img.shields.io/badge/InfluxDB-2.x-22ADF6?style=for-the-badge&logo=influxdb&logoColor=white)
 
-Since the original source code did not provide serializations or post-processing of the analysis data, I developed a JSON output of the analysis that includes the five most important audio events and respective scores for each overlapping time slice of the audio file (currently 960 ms) and a merge strategy that combines the same consecutive events and outputs CSV data divided into music, speech, silence and other events.
+**Détection automatique de sons dans des fichiers audio et vidéo grâce au modèle IA YAMNet de Google — optimisé pour Raspberry Pi.**
 
-The image uses the following resources:
-* [YAMNet source code](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) of the TensorFlow Model Garden
-* [YAMNet model weights](https://storage.googleapis.com/audioset/yamnet.h5) in HDF5 format.
+</div>
 
-### Installation
+---
 
-A recent docker installation is required. To build the image use the following command or use the **build.sh** script.
+## 📌 Description
 
-```
-docker build --rm -t hagt/yamnet:1.0 .
-```
+Ce projet permet d'analyser des fichiers **audio** (`.wav`) ou **vidéo** (`.mp4`, `.avi`...) afin de détecter automatiquement des événements sonores critiques tels que :
 
-The Docker image uses a CPU-based Tensorflow installation. If you have a GPU available, it can be accelerated using a GPU version of Tensorflow (change FROM part in the Dockerfile to tensorflow:2.3.0-gpu).
+- 🔫 Coups de feu / tirs (`Gunshot, gunfire`)
+- 💥 Explosions (`Explosion`)
+- 🗣️ Voix / discours (`Speech`)
+- 🎵 Musique (`Music`)
+- 🔇 Silence (`Silence`)
+- 🔊 Autres sons (`Other`)
 
-### Usage
+Le modèle utilisé est **YAMNet** (Yet Another Mobile Network), développé par Google et entraîné sur **521 catégories de sons** du dataset AudioSet. Les résultats sont exportés en **CSV** et envoyés vers **InfluxDB** pour une visualisation en temps réel (ex: Grafana).
 
-To perform an analysis, I provide a **run.sh** script that accepts a video or audio file and automatically mounts the file into the container and starts the analysis. Only WAV audio files are accepted as input. A number of video formats are supported as long as the first audio track can be extracted using ffmpeg. The container requires write access to the directory in which the video or audio file is located in order to output the annotations.
+---
 
-```
-./run.sh ./my_video.mp4
-./run.sh ./my_audio.wav
-```
-
-If you want to run the image manually, use the following command:
-```
-docker run --rm -it --name yamnet -v /path/to/video/audio/file:/data hagt/yamnet:1.0 /data/my_video.mp4
-```
-
-### Output data
-
-The yamnet processing script outputs a JSON serialization of the original classification. It contains a *file_info* part and a list of *audio_events*. Each audio event is a 960ms segment of the waveform (the step size is 480ms, so they overlap) and lists the top 5 highest-scoring *events* and their corresponding *scores*.
-
-```json
-{
-    "file_info": {
-        "path": "/data/TV-20210315-2033-2200.webs.h264.mp4",
-        "patch_window_ms": 960.0,
-        "patch_hop_ms": 480.0
-    },
-    "audio_events": [{
-            "begin": 0,
-            "end": 960,
-            "events": ["Silence", "Music", "Musical instrument", "Speech", "Inside, small room"],
-            "scores": [0.9924958348274231, 0.00016120076179504395, 2.1329778974177316e-05, 2.0468718503252603e-05, 1.929334939632099e-05]
-        }, {
-            "begin": 480,
-            "end": 1440,
-            "events": ["Silence", "Music", "Inside, small room", "Musical instrument", "Keyboard (musical)"],
-            "scores": [0.19930168986320496, 0.1958259642124176, 0.004749268293380737, 0.0017569959163665771, 0.0016628503799438477]
-        }, {
-            "begin": 960,
-            "end": 1920,
-            "events": ["Music", "Musical instrument", "Ukulele", "Pizzicato", "Plucked string instrument"],
-            "scores": [0.8656256198883057, 0.07309243083000183, 0.06837290525436401, 0.02548578381538391, 0.020604193210601807]
-        }, {
-        ...
-```
-
-The data is then processed to categorize audio events into "music", "speech", "silence" and any "other" events and to merge consecutive events. The results are saved as tab-separated CSV files in the format "Begin (ms)" *TAB* "End (ms)" *TAB* "Event". 
+## 🏗️ Architecture du projet
 
 ```
-example_music.csv
-480	18240	Music
-94560	95520	Music
-208320	210240	Music
-...
-
-example_speech.csv
-6240	7680	Speech
-14880	940320	Speech
-941760	958080	Speech
-...
-
-example_silence.csv
-0	960	Silence
-624480	625440	Silence
-894240	895200	Silence
-...
-
-example_other.csv
-9360	9840	Background music; Theme music
-9840	10560	Theme music
-65280	66240	Narration, monologue
-...
+yamnet_audioset_analysis_docker/
+│
+├── 🐳 Dockerfile                      → Image Docker ARM64 (Raspberry Pi 4)
+├── 🐳 Dockerfile.save                 → Sauvegarde de l'ancienne version
+│
+├── 🐍 yamnet_processing.py            → Script principal d'analyse IA
+├── 📦 requirements_yamnet.txt         → Dépendances Python
+│
+├── 🔨 build.sh                        → Construit l'image Docker
+├── ▶️  run.sh                          → Lance l'analyse sur un fichier
+├── 🎬 demo.sh                         → Démonstration avec fichiers de test
+│
+├── 🔊 gunshot1.wav                    → Fichier audio de test
+└── 📊 gunshot1_gunshot, gunfire.csv   → Résultat d'analyse (exemple)
 ```
 
-If you need different categorizations or thresholds for event filtering, you can change *EVENT_THRESHOLDS* in yamnet_processing.py.
+---
 
+## 🔄 Flux de traitement
+
+```
+📁 Fichier Audio/Vidéo (.wav / .mp4 / .avi ...)
+            │
+            ▼
+    ┌───────────────────┐
+    │  extract_wav()    │  ← (si vidéo) Extraction audio via FFmpeg
+    └───────────────────┘
+            │
+            ▼
+    ┌───────────────────┐
+    │ yamnet_inference()│  ← Analyse IA : découpe en fenêtres de ~0.96s
+    │   YAMNet Model    │    et retourne les 5 sons les plus probables
+    └───────────────────┘
+            │
+            ▼
+    ┌────────────────────────┐
+    │ filter_merge_events()  │  ← Filtre par seuil de confiance
+    │                        │    et regroupe les événements consécutifs
+    └────────────────────────┘
+            │
+     ┌──────┴──────┐
+     ▼             ▼
+📊 CSV         InfluxDB → 📈 Grafana
+```
+
+---
+
+## ⚙️ Seuils de détection
+
+| Catégorie | Seuil de confiance |
+|---|:---:|
+| 🔇 Silence | 0.50 |
+| 🗣️ Speech | 0.50 |
+| 🎵 Music | 0.10 |
+| 🔫 Gunshot, gunfire | 0.40 |
+| 💥 Explosion | 0.40 |
+| 🔊 Other | 0.30 |
+
+> Un événement est détecté seulement si le score de YAMNet dépasse le seuil correspondant.
+
+---
+
+## 🚀 Installation et utilisation
+
+### Prérequis
+
+- Raspberry Pi 4 (ARM64) avec **Raspberry Pi OS 64-bit**
+- **Docker** installé sur le Pi
+- **InfluxDB 2.x** accessible sur le réseau (container ou serveur)
+
+### 1. Cloner le dépôt
+
+```bash
+git clone https://github.com/VOTRE_USERNAME/yamnet_audioset_analysis_docker.git
+cd yamnet_audioset_analysis_docker
+```
+
+### 2. Construire l'image Docker
+
+```bash
+./build.sh
+```
+> ⏳ Cette étape peut prendre **20 à 40 minutes** sur Raspberry Pi (compilation de TensorFlow ARM64).
+
+### 3. Analyser un fichier audio
+
+```bash
+./run.sh mon_audio.wav
+```
+
+### 4. Analyser un fichier vidéo
+
+```bash
+./run.sh ma_video.mp4
+```
+
+### 5. Lancer la démonstration
+
+```bash
+./demo.sh
+```
+> Télécharge automatiquement des fichiers de test et lance l'analyse.
+
+---
+
+## 📊 Format des résultats
+
+### Fichier CSV généré
+
+```
+0	960	    Gunshot, gunfire
+960	1920	Gunshot, gunfire; Explosion
+1920	2880	Silence
+```
+
+| Colonne 1 | Colonne 2 | Colonne 3 |
+|---|---|---|
+| Début (ms) | Fin (ms) | Son(s) détecté(s) |
+
+### Données InfluxDB
+
+Chaque événement envoyé contient :
+- `category` → catégorie du son
+- `score` → score de confiance (0.0 à 1.0)
+- `duration_ms` → durée de l'événement
+- `begin_ms` / `end_ms` → timestamps dans l'audio
+- `file` → nom du fichier analysé
+
+---
+
+## 🐳 Détails Docker
+
+### Image de base
+
+```
+arm64v8/python:3.9-slim
+```
+Spécialement compilée pour **Raspberry Pi 4 (ARM64)**.
+
+### Dépendances installées
+
+| Package | Version | Rôle |
+|---|---|---|
+| TensorFlow | 2.13.0 | Moteur du modèle YAMNet |
+| h5py | latest | Chargement du modèle `.h5` |
+| soundfile | latest | Lecture des fichiers `.wav` |
+| resampy | latest | Rééchantillonnage audio |
+| numpy | 1.24.3 | Calculs numériques |
+| influxdb-client | latest | Envoi vers InfluxDB |
+| ffmpeg | system | Extraction audio depuis vidéo |
+
+---
+
+## 🔧 Configuration InfluxDB
+
+Dans `yamnet_processing.py`, modifiez ces variables :
+
+```python
+INFLUX_URL    = "http://influxdb2:8086"   # URL de votre InfluxDB
+INFLUX_TOKEN  = "votre_token_ici"         # Token d'accès
+INFLUX_ORG    = "my-org"                  # Nom de votre organisation
+INFLUX_BUCKET = "my-bucket"               # Bucket de destination
+```
+
+---
+
+## 📦 Formats de fichiers supportés
+
+| Type | Extensions |
+|---|---|
+| Audio | `.wav` |
+| Vidéo | `.mp4`, `.avi`, `.mpg`, `.mpeg`, `.m4p`, `.m4v`, `.ogg`, `.mpe`, `.mpv` |
+
+---
+
+## 🎓 Modèle YAMNet
+
+- **Développeur** : Google / TensorFlow
+- **Dataset d'entraînement** : [AudioSet](https://research.google.com/audioset/) (2 millions de clips YouTube)
+- **Nombre de catégories** : 521 sons différents
+- **Architecture** : MobileNet v1 (optimisé pour l'embarqué)
+- **Source** : [github.com/tensorflow/models/audioset/yamnet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet)
+
+---
+
+## 👨‍💻 Auteur
+
+<div align="center">
+
+| | |
+|---|---|
+| **Nom** | Cheikh Brahim Ahmed |
+| **Titre** | Élève Ingénieur en Systèmes Embarqués |
+| **École** | École Nationale d'Ingénieurs de Tunis (ENIT) |
+| **Projet** | Projet de Fin d'Études (PFE) |
+
+</div>
+
+---
+
+## 📄 Licence
+
+Ce projet utilise le modèle YAMNet de Google (Apache License 2.0).

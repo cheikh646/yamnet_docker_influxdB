@@ -49,3 +49,4 @@ COPY requirements_yamnet.txt .
 RUN pip install --no-cache-dir -r requirements_yamnet.txt
 
 ENTRYPOINT ["python3", "yamnet_processing.py"]
+

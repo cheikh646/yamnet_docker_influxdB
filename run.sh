@@ -11,5 +11,5 @@ inputfull=`realpath $1`
 ipath=$(dirname -- "$inputfull")
 filename=$(basename -- "$inputfull")
 
-docker run --rm -it --name yamnet -v $ipath:/data hagt/yamnet:1.0 "/data/$filename"
+docker run --rm -it --name yamnet3 -v $ipath:/data hagt/yamnet:1.0 : "/data/$filename"
 

@@ -11,12 +11,31 @@ import soundfile as sf
 
 import params as yamnet_params
 import yamnet as yamnet_model
+import datetime
+from influxdb_client import InfluxDBClient, Point
+import datetime
 
-EVENT_THRESHOLDS = {'Silence': 0.5, 'Music': 0.1, 'Speech': 0.5, 'Other' : 0.3}
+EVENT_THRESHOLDS = {
+    'Silence': 0.5,
+    'Music': 0.1,
+    'Speech': 0.5,
+    'Gunshot, gunfire': 0.4,   # ✅ catégorie dédiée
+    'Explosion': 0.4,           # ✅ catégorie dédiée
+    'Other': 0.3
+}
 
 TMP_AUDIO_FILE = "/tmp/audio.wav"
 VIDEO_FILE_EXTENSIONS = [".mp4",".avi",".mpg",".mpeg",".m4p",".m4v",".ogg",".mpe",".mpv"] # not complete, extend to your needs
+# Configuration InfluxDB
+INFLUX_URL = "http://influxdb2:8086"  
+INFLUX_TOKEN = "ADZoOgXB_wBGCUU9UHP0bif0mZ5oYz5f5L6-cx7_uum97WmqLoFgK7roPwHmchCj6pm4NjxDgAPJuyjD77197A=="
+INFLUX_ORG = "my-org"
+INFLUX_BUCKET = "my-bucket"
 
+client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+from influxdb_client.client.write_api import SYNCHRONOUS
+
+write_api = client.write_api(write_options=SYNCHRONOUS)
 def extract_wav(videofile):
     print("Extracting audio track 1 using ffmpeg from video",videofile)
     command = "ffmpeg -y -loglevel quiet -i {0} -ab 160k -ac 1 -ar 16000 -vn {1}".format(videofile, TMP_AUDIO_FILE)
@@ -75,7 +94,27 @@ def yamet_inference(inputfile, audiofile, outputfile):
     print("Writing json output...")
     with open(outputfile, 'w') as f:
         json.dump(data, f)
-    
+
+def send_events_to_influx(merged_events, file):
+    print("Sending events to InfluxDB...")
+    for cat, events in merged_events.items():
+        for event in events:
+            start_ms, end_ms, labels, score = event  # ✅ unpacker le score
+
+            point = (
+                Point("audio_event")
+                .tag("category", cat)
+                .tag("file", file)
+                .field("labels", labels)
+                .field("duration_ms", end_ms - start_ms)
+                .field("score", score)           # ✅ score ajouté
+                .field("begin_ms", start_ms)     # ✅ timestamp audio réel
+                .field("end_ms", end_ms)         # ✅ timestamp audio réel
+                .time(datetime.datetime.utcnow())
+            )
+
+            write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
+
 def filter_merge_events(jsonfile, file):
     print("Filter and merge audio events...")
     f = open(jsonfile)
@@ -109,7 +148,9 @@ def filter_merge_events(jsonfile, file):
         for cat,ct in caption_texts.items():
             if ct != "":
                 ct = ct[:-2]
-                processed_events[cat].append([audio_data['begin'], audio_data['end'] , ct])
+                # ✅ Remplacer par (ajouter le score max)
+                max_score = max(audio_data['scores'])
+                processed_events[cat].append([audio_data['begin'], audio_data['end'], ct, max_score])
             
     merged_events = dict()
     for e in EVENT_THRESHOLDS:
@@ -130,6 +171,7 @@ def filter_merge_events(jsonfile, file):
                 prev_data = yamnet_data
             else:
                 prev_data[1] = yamnet_data[1]
+                prev_data[3] = max(prev_data[3], yamnet_data[3])  
         merged_events[cat].append(prev_data)
         
     for cat, merged_data in merged_events.items():
@@ -140,7 +182,7 @@ def filter_merge_events(jsonfile, file):
             tsv_writer = csv.writer(of, delimiter='\t')
             for yamnet_data in merged_data:
                 tsv_writer.writerow([yamnet_data[0], yamnet_data[1], yamnet_data[2]]);
-
+    send_events_to_influx(merged_events, file)
 
 def main(inputfile):
     if not os.path.exists(inputfile):

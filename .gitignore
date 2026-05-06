@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.json
+*.log
+*.mp4
+*.avi
+*.mpg
+StarWars60.wav
+TV-*.mp4
+temp/
+.env
