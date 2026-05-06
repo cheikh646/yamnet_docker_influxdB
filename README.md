@@ -14,70 +14,41 @@
 
 ---
 
-## 📌 Description
+##  Description
 
 Ce projet permet d'analyser des fichiers **audio** (`.wav`) ou **vidéo** (`.mp4`, `.avi`...) afin de détecter automatiquement des événements sonores critiques tels que :
 
-- 🔫 Coups de feu / tirs (`Gunshot, gunfire`)
-- 💥 Explosions (`Explosion`)
-- 🗣️ Voix / discours (`Speech`)
-- 🎵 Musique (`Music`)
-- 🔇 Silence (`Silence`)
-- 🔊 Autres sons (`Other`)
+-  Coups de feu / tirs (`Gunshot, gunfire`)
+-  Explosions (`Explosion`)
+-  Voix / discours (`Speech`)
+-  Musique (`Music`)
+-  Silence (`Silence`)
+-  Autres sons (`Other`)
 
 Le modèle utilisé est **YAMNet** (Yet Another Mobile Network), développé par Google et entraîné sur **521 catégories de sons** du dataset AudioSet. Les résultats sont exportés en **CSV** et envoyés vers **InfluxDB** pour une visualisation en temps réel (ex: Grafana).
 
 ---
 
-## 🏗️ Architecture du projet
+##  Architecture du projet
 
 ```
 yamnet_audioset_analysis_docker/
 │
-├── 🐳 Dockerfile                      → Image Docker ARM64 (Raspberry Pi 4)
-├── 🐳 Dockerfile.save                 → Sauvegarde de l'ancienne version
+├── Dockerfile                      → Image Docker ARM64 (Raspberry Pi 5)
+├── Dockerfile.save                 → Sauvegarde de l'ancienne version
 │
-├── 🐍 yamnet_processing.py            → Script principal d'analyse IA
-├── 📦 requirements_yamnet.txt         → Dépendances Python
+├── yamnet_processing.py            → Script principal d'analyse IA
+├── 📦requirements_yamnet.txt         → Dépendances Python
 │
-├── 🔨 build.sh                        → Construit l'image Docker
+├──  build.sh                        → Construit l'image Docker
 ├── ▶️  run.sh                          → Lance l'analyse sur un fichier
-├── 🎬 demo.sh                         → Démonstration avec fichiers de test
+├──  demo.sh                         → Démonstration avec fichiers de test
 │
 ├── 🔊 gunshot1.wav                    → Fichier audio de test
-└── 📊 gunshot1_gunshot, gunfire.csv   → Résultat d'analyse (exemple)
+└──  gunshot1_gunshot, gunfire.csv   → Résultat d'analyse (exemple)
 ```
 
----
 
-## 🔄 Flux de traitement
-
-```
-📁 Fichier Audio/Vidéo (.wav / .mp4 / .avi ...)
-            │
-            ▼
-    ┌───────────────────┐
-    │  extract_wav()    │  ← (si vidéo) Extraction audio via FFmpeg
-    └───────────────────┘
-            │
-            ▼
-    ┌───────────────────┐
-    │ yamnet_inference()│  ← Analyse IA : découpe en fenêtres de ~0.96s
-    │   YAMNet Model    │    et retourne les 5 sons les plus probables
-    └───────────────────┘
-            │
-            ▼
-    ┌────────────────────────┐
-    │ filter_merge_events()  │  ← Filtre par seuil de confiance
-    │                        │    et regroupe les événements consécutifs
-    └────────────────────────┘
-            │
-     ┌──────┴──────┐
-     ▼             ▼
-📊 CSV         InfluxDB → 📈 Grafana
-```
-
----
 
 ## ⚙️ Seuils de détection
 
@@ -137,7 +108,7 @@ cd yamnet_audioset_analysis_docker
 
 ---
 
-## 📊 Format des résultats
+##  Format des résultats
 
 ### Fichier CSV généré
 
@@ -162,41 +133,7 @@ Chaque événement envoyé contient :
 
 ---
 
-## 🐳 Détails Docker
 
-### Image de base
-
-```
-arm64v8/python:3.9-slim
-```
-Spécialement compilée pour **Raspberry Pi 4 (ARM64)**.
-
-### Dépendances installées
-
-| Package | Version | Rôle |
-|---|---|---|
-| TensorFlow | 2.13.0 | Moteur du modèle YAMNet |
-| h5py | latest | Chargement du modèle `.h5` |
-| soundfile | latest | Lecture des fichiers `.wav` |
-| resampy | latest | Rééchantillonnage audio |
-| numpy | 1.24.3 | Calculs numériques |
-| influxdb-client | latest | Envoi vers InfluxDB |
-| ffmpeg | system | Extraction audio depuis vidéo |
-
----
-
-## 🔧 Configuration InfluxDB
-
-Dans `yamnet_processing.py`, modifiez ces variables :
-
-```python
-INFLUX_URL    = "http://influxdb2:8086"   # URL de votre InfluxDB
-INFLUX_TOKEN  = "votre_token_ici"         # Token d'accès
-INFLUX_ORG    = "my-org"                  # Nom de votre organisation
-INFLUX_BUCKET = "my-bucket"               # Bucket de destination
-```
-
----
 
 ## 📦 Formats de fichiers supportés
 
@@ -232,6 +169,6 @@ INFLUX_BUCKET = "my-bucket"               # Bucket de destination
 
 ---
 
-## 📄 Licence
+##  Licence
 
 Ce projet utilise le modèle YAMNet de Google (Apache License 2.0).
